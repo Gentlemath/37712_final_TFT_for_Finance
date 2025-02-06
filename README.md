@@ -10,12 +10,11 @@ A brief description of what your project does.
   - [Testing data source](#testing-data-source)
   - [Usage](#usage)
 
-## Installation
+### Installation
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/your-username/project-name.git
-    cd project-name
+    git clone git@github.com:Gentlemath/37712_final_TFT_for_Finance.git
     ```
 2. Create a virtual environment (optional but recommended):
     ```sh
@@ -26,13 +25,13 @@ A brief description of what your project does.
     ```sh
     pip install -r requirements.txt
     ```
-## Testing data source
+### Testing data source
     ```sh
     python data_test.py
     ```
 
 
-## Usage
+### Usage
 
 Provide instructions and examples on how to use the project. Here's an example:
 
