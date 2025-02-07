@@ -3,11 +3,21 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import copy
+import random
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 from load_data import load_stock_price
+from evaluation import evaluation
+
+def set_random_seed(seed = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -54,13 +64,54 @@ def create_sequences(data: np.ndarray, seq_length: int):
     return np.array(sequences), np.array(labels)
 
 def scaling(train_data, val_data , test_data):
-    # scaling
+    """
+    Scales the data using MinMaxScaler and returns scaled data and the scaler.
+    
+    Args:
+        train_data (np.ndarray): Training data array.
+        val_data (np.ndarray): Validation data array.
+        test_data (np.ndarray): Test data array.
+
+    Returns:
+        tuple: Scaled train, validation, and test datasets along with the scaler instance.
+    """
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_train_data = scaler.fit_transform(train_data)
     scaled_val_data = scaler.transform(val_data)
     scaled_test_data = scaler.transform(test_data)
 
     return scaled_train_data, scaled_val_data, scaled_test_data, scaler
+
+def inverse_scaling(scaler, predicted_prices, test_labels):
+    """
+    Inverse transforms the predicted prices and test labels using the given scaler.
+
+    Args:
+        scaler (MinMaxScaler): Fitted MinMaxScaler instance.
+        predicted_prices (list): List of predicted prices from the model.
+        test_labels (torch.Tensor): Ground truth labels from the test set.
+
+    Returns:
+        tuple: Inverse-transformed predicted and actual prices.
+    """
+
+    # Reshape predicted prices to match scaler's input format
+    predicted_prices = np.array(predicted_prices).reshape(-1, 1)
+    # Create a dummy array with both price and volume
+    dummy_input = np.zeros((predicted_prices.shape[0], 2))
+    dummy_input[:, 0] = predicted_prices[:, 0]  # Populate the price column
+    # Inverse transform
+    predicted_prices = scaler.inverse_transform(dummy_input)[:, 0]  # Extract only the price
+
+    # Inverse transform the actual test labels
+    test_labels_reshaped = test_labels.cpu().numpy().reshape(-1, 1)
+    dummy_actual = np.zeros((test_labels_reshaped.shape[0], 2))
+    dummy_actual[:, 0] = test_labels_reshaped[:, 0]
+
+    actual_prices = scaler.inverse_transform(dummy_actual)[:, 0]
+
+    return predicted_prices, actual_prices
+
 
 class EarlyStopper:
     def __init__(self, patience: int = 5, min_delta: float = 0.0):
@@ -81,12 +132,13 @@ class EarlyStopper:
             self.counter += 1
 
         return self.counter >= self.patience
+    
 
 
 def main(): 
      
-    ticker = "AAPL"
-    train_data, val_data, test_data = load_stock_price('AAPL')
+    ticker = "^GSPC"
+    train_data, val_data, test_data = load_stock_price(ticker)
     scaled_train_data, scaled_val_data, scaled_test_data, scaler = scaling(train_data, val_data, test_data)
 
 
@@ -124,7 +176,7 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.005, weight_decay=1e-3)
 
     # Train the model
-    epochs = 50
+    epochs = 100
 
     early_stopper = EarlyStopper(patience = 10)
     best_val_loss = float('inf')
@@ -145,7 +197,8 @@ def main():
 
             total_loss += loss.item()
         avg_train_loss = total_loss / len(train_loader)
-        print(f"Train Loss: {avg_train_loss:.4f}")
+        if epoch % 10 == 0:
+            print(f"Epoch: {epoch}    Train Loss: {avg_train_loss:.4f}")
         
         model.eval()
         val_loss = 0
@@ -159,12 +212,13 @@ def main():
                 val_loss += loss.item()
             
             avg_val_loss = val_loss / len(val_loader)
-            print(f"Val Loss: {avg_val_loss:.4f}")
+            if epoch % 10 == 0:
+                print(f"Epoch: {epoch}    Val Loss: {avg_val_loss:.4f}")
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             best_model_state = copy.deepcopy(model.state_dict())
-            print(f"So far the best!")
+            print(f"Update the best!")
         if early_stopper.should_stop(avg_val_loss):
             print(f"Early stopped!")
             break
@@ -186,27 +240,18 @@ def main():
             batch_outputs = model(X_test).cpu().numpy()
             predicted_prices.extend(batch_outputs.flatten())
 
+    predicted_prices, actual_prices = inverse_scaling(scaler, predicted_prices, test_labels)
 
-    # Reshape predicted prices to match scaler's input format
-    predicted_prices = np.array(predicted_prices).reshape(-1, 1)
-    # Create a dummy array with both price and volume
-    dummy_input = np.zeros((predicted_prices.shape[0], 2))
-    dummy_input[:, 0] = predicted_prices[:, 0]  # Populate the price column
-    # Inverse transform
-    predicted_prices = scaler.inverse_transform(dummy_input)[:, 0]  # Extract only the price
+    ## Evaluation
+    mse, mae, mape = evaluation(actual_prices, predicted_prices)
+    print(f'LSTM predction of {ticker}: MSE = {mse:.2f}, MAE = {mae:.2f}, MAPE = {mape:.2f}')
 
-    # Inverse transform the actual test labels
-    test_labels_reshaped = test_labels.cpu().numpy().reshape(-1, 1)
-    dummy_actual = np.zeros((test_labels_reshaped.shape[0], 2))
-    dummy_actual[:, 0] = test_labels_reshaped[:, 0]
-
-    actual_prices = scaler.inverse_transform(dummy_actual)[:, 0]
 
     # Plot the test results
     plt.figure(figsize=(14, 7))
     plt.plot(test_data.index[seq_length:], actual_prices, label='Actual Prices')
     plt.plot(test_data.index[seq_length:], predicted_prices, label='Predicted Prices')
-    plt.title(f'{ticker} Stock Price Prediction')
+    plt.title(f'{ticker} (S&P 500) Price Prediction')
     plt.xlabel('Date')
     plt.ylabel('Stock Price')
     plt.legend()
