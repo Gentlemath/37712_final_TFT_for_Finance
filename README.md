@@ -30,10 +30,9 @@ A brief description of what your project does.
     python data_test.py
     ```
 
-
 ### Usage
 
-Provide instructions and examples on how to use the project. Here's an example:
+Baseline model LSTM. Here's an example:
 
 ```sh
-python main.py --input your_input_file
+python LSTM.py
