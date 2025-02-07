@@ -6,9 +6,9 @@ A brief description of what your project does.
 
 - [Final project - TFT for financial predicting](#final-project---tft-for-financial-predicting)
   - [Table of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Testing data source](#testing-data-source)
-  - [Usage](#usage)
+    - [Installation](#installation)
+    - [Testing data source](#testing-data-source)
+    - [Usage](#usage)
 
 ### Installation
 
@@ -18,7 +18,7 @@ A brief description of what your project does.
     ```
 2. Create a virtual environment (optional but recommended):
     ```sh
-    conda create -n env_name python=3.x
+    conda create -n env_name python=3.10
     conda activate env_name
     ```
 3. Install the required packages:
