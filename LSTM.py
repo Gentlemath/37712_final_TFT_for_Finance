@@ -95,7 +95,7 @@ def main():
     scaled_train_data, scaled_val_data, scaled_test_data, scaler = scaling(train_data, val_data, test_data)
 
 
-    seq_length = 50  # Example sequence length
+    seq_length = 44  # Example sequence length
 
     train_sequences, train_labels = create_sequences(scaled_train_data, seq_length)
     val_sequences, val_labels = create_sequences(scaled_val_data, seq_length)
@@ -126,10 +126,10 @@ def main():
 
     model = MyLSTM(input_size, hidden_size, output_size, num_layers).to(DEVICE)
     criterion = nn.MSELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.005, weight_decay=1e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-3)
 
     # Train the model
-    epochs = 100
+    epochs = 200
 
     early_stopper = EarlyStopper(patience = 10)
     best_val_loss = float('inf')
@@ -197,17 +197,18 @@ def main():
 
     ## Evaluation
     mse, mae, mape = evaluation(actual_prices, predicted_prices)
-    print(f'LSTM predction of {ticker}: MSE = {mse:.2f}, MAE = {mae:.2f}, MAPE = {mape:.2f}')
+    print(f'LSTM prediction of {ticker}: MSE = {mse:.2f}, MAE = {mae:.2f}, MAPE = {mape:.2f}')
 
 
     # Plot the test results
     plt.figure(figsize=(14, 7))
     plt.plot(test_data.index[seq_length:], actual_prices, label='Actual Prices')
     plt.plot(test_data.index[seq_length:], predicted_prices, label='Predicted Prices')
-    plt.title(f'{ticker} (S&P 500) Price Prediction')
+    plt.title(f'{ticker} Price Prediction')
     plt.xlabel('Date')
     plt.ylabel('Stock Price')
     plt.legend()
+    plt.savefig(f"{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
