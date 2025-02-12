@@ -90,7 +90,7 @@ class EarlyStopper:
 
 def main(): 
      
-    ticker = "^GSPC"
+    ticker = "GOOG"
     train_data, val_data, test_data = load_stock_price(ticker)
     scaled_train_data, scaled_val_data, scaled_test_data, scaler = scaling(train_data, val_data, test_data)
 
@@ -126,12 +126,12 @@ def main():
 
     model = MyLSTM(input_size, hidden_size, output_size, num_layers).to(DEVICE)
     criterion = nn.MSELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005, weight_decay=1e-3)
 
     # Train the model
-    epochs = 200
+    epochs = 500
 
-    early_stopper = EarlyStopper(patience = 10)
+    early_stopper = EarlyStopper(patience = 20)
     best_val_loss = float('inf')
     best_model_state = None
 
