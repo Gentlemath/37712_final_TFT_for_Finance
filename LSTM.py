@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
-from load_data import load_stock_price
+from data_api import load_stock_price
 from evaluation import evaluation
 from scaling_and_inverse import scaling, inverse_scaling
 
@@ -38,6 +38,7 @@ class MyLSTM(nn.Module):
     def forward(self, x):
         # initialize hidden state: (num_layers * num_directions, batch_size, hidden_size)
         # initialize cell state: (num_layers * num_directions, batch_size, hidden_size)
+        # In this study, num_directions = 1
         h_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
         c_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
         

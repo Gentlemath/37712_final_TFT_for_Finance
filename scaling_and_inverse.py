@@ -14,11 +14,20 @@ def scaling(train_data, val_data , test_data):
         tuple: Scaled train, validation, and test datasets along with the scaler instance.
     """
     scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_train_data = scaler.fit_transform(train_data)
-    scaled_val_data = scaler.transform(val_data)
-    scaled_test_data = scaler.transform(test_data)
 
-    return scaled_train_data, scaled_val_data, scaled_test_data, scaler
+    # Fit on training data and transform
+    train_data_scaled = train_data.copy()
+    train_data_scaled[['Close', 'Volume']] = scaler.fit_transform(train_data[['Close', 'Volume']])
+
+    # Transform validation and test data without refitting
+    val_data_scaled = val_data.copy()
+    val_data_scaled[['Close', 'Volume']] = scaler.transform(val_data[['Close', 'Volume']])
+
+    test_data_scaled = test_data.copy()
+    test_data_scaled[['Close', 'Volume']] = scaler.transform(test_data[['Close', 'Volume']])
+
+    return train_data_scaled, val_data_scaled, test_data_scaled, scaler
+
 
 def inverse_scaling(scaler, predicted_prices, test_labels):
     """
