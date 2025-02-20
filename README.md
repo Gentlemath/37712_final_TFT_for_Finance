@@ -36,8 +36,10 @@ Baseline model LSTM. Here's an example:
 
 ```sh
 python LSTM.py
+```
 
 A demo of TFT:
 
 ```sh
 python demo.py
+```
