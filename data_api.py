@@ -32,7 +32,7 @@ def load_stock_price(ticker: str, start_date: str = '2015-01-01', end_date: str 
     return train_data, val_data, test_data
 
 
-def load_stock_price_and_known(ticker: str, start_date: str = '2005-01-01', end_date: str = '2025-01-01'):
+def load_stock_price_and_known(ticker: str, start_date: str = '2015-01-01', end_date: str = '2025-01-01'):
     '''
     input:
         tickers, single string of a ticker, like "AAPL"
@@ -54,10 +54,10 @@ def load_stock_price_and_known(ticker: str, start_date: str = '2005-01-01', end_
     
     # Extract required columns and create new time-based features
     df_processed = df[['Close', 'Volume']].copy()
-    df_processed['Day_of_Week'] = df.index.dayofweek  # Monday = 0, Sunday = 6
-    df_processed['Day_of_Month'] = df.index.day
-    df_processed['Week_of_Year'] = df.index.isocalendar().week
-    df_processed['Week_of_Year'] = df_processed['Week_of_Year'].astype('int32')
+    #df_processed['Day_of_Week'] = df.index.dayofweek  # Monday = 0, Sunday = 6
+    #df_processed['Day_of_Month'] = df.index.day
+    #df_processed['Week_of_Year'] = df.index.isocalendar().week
+    #df_processed['Week_of_Year'] = df_processed['Week_of_Year'].astype('int32')
     df_processed['Month'] = df.index.month
     
 

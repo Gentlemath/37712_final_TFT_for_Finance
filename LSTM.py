@@ -127,7 +127,7 @@ def main():
 
     model = MyLSTM(input_size, hidden_size, output_size, num_layers).to(DEVICE)
     criterion = nn.MSELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005, weight_decay=1e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001, weight_decay=1e-3)
 
     # Train the model
     epochs = 500
@@ -200,7 +200,7 @@ def main():
     mse, mae, mape = evaluation(actual_prices, predicted_prices)
     print(f'LSTM prediction of {ticker}: MSE = {mse:.2f}, MAE = {mae:.2f}, MAPE = {mape:.2f}')
 
-
+    
     # Plot the test results
     plt.figure(figsize=(14, 7))
     plt.plot(test_data.index[seq_length:], actual_prices, label='Actual Prices')
@@ -209,9 +209,9 @@ def main():
     plt.xlabel('Date')
     plt.ylabel('Stock Price')
     plt.legend()
-    plt.savefig(f"{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"LSTM_{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
     plt.show()
-
+    
 
 if __name__ == "__main__":
     main()

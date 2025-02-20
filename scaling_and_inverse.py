@@ -1,4 +1,4 @@
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import numpy as np
 
 def scaling(train_data, val_data , test_data):
@@ -13,7 +13,8 @@ def scaling(train_data, val_data , test_data):
     Returns:
         tuple: Scaled train, validation, and test datasets along with the scaler instance.
     """
-    scaler = MinMaxScaler(feature_range=(0, 1))
+    #scaler = MinMaxScaler(feature_range=(0, 1))
+    scaler = StandardScaler()
 
     # Fit on training data and transform
     train_data_scaled = train_data.copy()
@@ -21,10 +22,10 @@ def scaling(train_data, val_data , test_data):
 
     # Transform validation and test data without refitting
     val_data_scaled = val_data.copy()
-    val_data_scaled[['Close', 'Volume']] = scaler.transform(val_data[['Close', 'Volume']])
+    val_data_scaled[['Close', 'Volume']] = scaler.fit_transform(val_data[['Close', 'Volume']])
 
     test_data_scaled = test_data.copy()
-    test_data_scaled[['Close', 'Volume']] = scaler.transform(test_data[['Close', 'Volume']])
+    test_data_scaled[['Close', 'Volume']] = scaler.fit_transform(test_data[['Close', 'Volume']])
 
     return train_data_scaled, val_data_scaled, test_data_scaled, scaler
 
@@ -51,7 +52,7 @@ def inverse_scaling(scaler, predicted_prices, test_labels):
     predicted_prices = scaler.inverse_transform(dummy_input)[:, 0]  # Extract only the price
 
     # Inverse transform the actual test labels
-    test_labels_reshaped = test_labels.cpu().numpy().reshape(-1, 1)
+    test_labels_reshaped = test_labels.to_numpy().reshape(-1, 1)
     dummy_actual = np.zeros((test_labels_reshaped.shape[0], 2))
     dummy_actual[:, 0] = test_labels_reshaped[:, 0]
 

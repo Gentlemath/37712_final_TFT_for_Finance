@@ -13,32 +13,7 @@ class GatedLinearUnit(nn.Module):
     def forward(self, x):
         return self.fc(x) * torch.sigmoid(self.gate(x))
     
-class TimeDistribution(nn.Module):
-    def __init__(self, module, batch_first=False):
-        super(TimeDistribution, self).__init__()
-        self.module = module
-        self.batch_first = batch_first
 
-    def forward(self, x):
-        # no time dimension
-        if len(x.size()) <= 2:
-            return self.module(x)
-
-        # Reshape the input to combine batch and time dimensions
-        batch_size = x.size(0)
-        timesteps = x.size(1)
-        feature_size = x.size(2)
-        x_reshape = x.contiguous().view(-1, feature_size)  # (batch_size * timesteps, feature_size)
-
-        # Apply the module to the reshaped input
-        y = self.module(x_reshape)
-
-        # Reshape the output back to the desired shape
-        if self.batch_first:
-            y = y.contiguous().view(batch_size, timesteps, -1)  # (batch_size, timesteps, output_size)
-        else:
-            y = y.view(timesteps, batch_size, -1)  # (timesteps, batch_size, output_size)
-        return y
     
 class GatedResidualNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, dropout, batch_first=False):
