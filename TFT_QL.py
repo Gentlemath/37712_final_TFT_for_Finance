@@ -145,7 +145,8 @@ class TFT(nn.Module):
         self.lstm_layers = config['lstm_layers']
         self.dropout = config['dropout']
         self.attn_heads = config['attn_heads']    #attention params
-        self.ouput_len = config['ouput_len']
+        self.num_quantiles = config['num_quantiles']
+        self.valid_quantiles = config['vailid_quantiles']
 
 
         # Embeddings for categorical variables
@@ -198,7 +199,7 @@ class TFT(nn.Module):
         #self.pre_output_norm = TimeDistribution(nn.BatchNorm1d(self.hidden_size, self.hidden_size))
         self.pre_output_gate = GatedLinearUnit(self.hidden_size, self.hidden_size)
 
-        self.output_layer = nn.Linear(self.hidden_size, self.ouput_len)
+        self.output_layer = nn.Linear(self.hidden_size, self.num_quantiles)
 
     def apply_embedding(self, x, apply_masking = True):
         '''

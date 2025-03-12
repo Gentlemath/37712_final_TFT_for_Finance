@@ -1,5 +1,6 @@
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import numpy as np
+import pandas as pd
 
 def scaling(train_data, val_data , test_data):
     """
@@ -37,7 +38,7 @@ def inverse_scaling(scaler, predicted_prices, test_labels):
     Args:
         scaler (MinMaxScaler): Fitted MinMaxScaler instance.
         predicted_prices (list): List of predicted prices from the model.
-        test_labels (torch.Tensor): Ground truth labels from the test set.
+        test_labels: Ground truth labels from the test set.
 
     Returns:
         tuple: Inverse-transformed predicted and actual prices.
@@ -52,7 +53,10 @@ def inverse_scaling(scaler, predicted_prices, test_labels):
     predicted_prices = scaler.inverse_transform(dummy_input)[:, 0]  # Extract only the price
 
     # Inverse transform the actual test labels
-    test_labels_reshaped = test_labels.to_numpy().reshape(-1, 1)
+    if isinstance(test_labels, pd.Series):
+        test_labels = test_labels.to_numpy()
+
+    test_labels_reshaped = test_labels.reshape(-1, 1)
     dummy_actual = np.zeros((test_labels_reshaped.shape[0], 2))
     dummy_actual[:, 0] = test_labels_reshaped[:, 0]
 

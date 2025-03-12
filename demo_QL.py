@@ -4,12 +4,13 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from data_api import load_stock_price_and_known
 from scaling_and_inverse import scaling, inverse_scaling
-from TFT_simple import TFT
+from TFT_QL import TFT
 import copy
 from evaluation import evaluation
 import matplotlib.pyplot as plt
 import random
 import numpy as np
+from QL import QuantileLoss
 
 
 def set_random_seed(seed = 42):
@@ -94,7 +95,8 @@ config['num_masked_vars'] = 2    # 'Close','Volume'
 #config['cat_embedding_vocab_sizes'] = [8,32,54,13]   # 'Day_of_Week + 1', 'Day_of_Month + 1', 'Week_of_Year + 1','Month + 1'
 config['cat_embedding_vocab_sizes'] = [13]   # 'Day_of_Week + 1', 'Month + 1'
 config['embedding_dim'] = 3
-config['ouput_len'] = 1    # 'Close'
+config['num_quantiles'] =3    # 'Close'
+config['vailid_quantiles'] = [0.1, 0.5, 0.9]
 
 #params for sequence
 config['seq_length'] = SEQ_LEN  
@@ -126,13 +128,13 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     model = TFT(config).to(DEVICE)
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0002, weight_decay=1e-5)
+    criterion = QuantileLoss(config['vailid_quantiles'])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005, weight_decay=1e-5)
 
     # Train the model
 
 
-    early_stopper = EarlyStopper(patience = 20)
+    early_stopper = EarlyStopper(patience = 10)
     best_val_loss = float('inf')
     best_model_state = None
 
@@ -190,25 +192,29 @@ def main():
         for X_test, _ in test_loader:
             X_test = X_test.to(DEVICE)
             batch_outputs = model(X_test).cpu().numpy()
-            predicted_prices.extend(batch_outputs.flatten())
+            predicted_prices.extend(batch_outputs)
 
 
-
-    predicted_prices, actual_prices = inverse_scaling(scaler, predicted_prices, scaled_test_data['Close'][ENCODE_LEN:])
+    predicted_prices = np.stack(predicted_prices)
+    predicted_prices1, actual_prices = inverse_scaling(scaler, predicted_prices[:,0], scaled_test_data['Close'][ENCODE_LEN:])
+    predicted_prices2, _ = inverse_scaling(scaler, predicted_prices[:,1], scaled_test_data['Close'][ENCODE_LEN:])
+    predicted_prices3, _ = inverse_scaling(scaler, predicted_prices[:,2], scaled_test_data['Close'][ENCODE_LEN:])
 
     ## Evaluation
-    mse, mae, mape = evaluation(actual_prices, predicted_prices)
+    mse, mae, mape = evaluation(actual_prices, predicted_prices2)
     print(f'TFT prediction of {ticker}: MSE = {mse:.2f}, MAE = {mae:.2f}, MAPE = {mape:.2f}')
 
     # Plot the test results
     plt.figure(figsize=(14, 7))
     plt.plot(test_data.index[ENCODE_LEN:], actual_prices, label='Actual Prices')
-    plt.plot(test_data.index[ENCODE_LEN:], predicted_prices, label='Predicted Prices')
+    plt.plot(test_data.index[ENCODE_LEN:], predicted_prices1, label='Predicted Prices_1')
+    plt.plot(test_data.index[ENCODE_LEN:], predicted_prices2, label='Predicted Prices_5')
+    plt.plot(test_data.index[ENCODE_LEN:], predicted_prices3, label='Predicted Prices_9')
     plt.title(f'{ticker} Price Prediction')
     plt.xlabel('Date')
     plt.ylabel('Stock Price')
     plt.legend()
-    plt.savefig(f"TFT_{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"TFT_QL_{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 

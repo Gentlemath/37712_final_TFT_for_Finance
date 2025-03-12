@@ -76,11 +76,11 @@ categorical_cols = ['Day_of_Week', 'Day_of_Month', 'Week_of_Year','Month']
 real_cols = ['Close','Volume']
 
 # Hyper pparams
-SEQ_LEN = 45 
+SEQ_LEN = 49
 ENCODE_LEN = 44
 DECODE_LEN = SEQ_LEN - ENCODE_LEN
-BATCH_SIZE = 8
-EPOCHS = 200
+BATCH_SIZE = 9
+EPOCHS = 100
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -93,8 +93,8 @@ config['num_real_decoder'] = 0
 config['num_masked_vars'] = 2    # 'Close','Volume'
 #config['cat_embedding_vocab_sizes'] = [8,32,54,13]   # 'Day_of_Week + 1', 'Day_of_Month + 1', 'Week_of_Year + 1','Month + 1'
 config['cat_embedding_vocab_sizes'] = [13]   # 'Day_of_Week + 1', 'Month + 1'
-config['embedding_dim'] = 3
-config['ouput_len'] = 1    # 'Close'
+config['embedding_dim'] = 2
+config['ouput_len'] = 5    # 'Close'
 
 #params for sequence
 config['seq_length'] = SEQ_LEN  
@@ -103,7 +103,7 @@ config['num_encoder_steps'] = ENCODE_LEN
 #params for models
 config['lstm_hidden_dimension'] = 128
 config['lstm_layers'] = 2
-config['dropout'] = 0.2
+config['dropout'] = 0.4
 config['device'] = DEVICE
 config['batch_size'] = BATCH_SIZE
 config['attn_heads'] = 1
@@ -190,11 +190,14 @@ def main():
         for X_test, _ in test_loader:
             X_test = X_test.to(DEVICE)
             batch_outputs = model(X_test).cpu().numpy()
-            predicted_prices.extend(batch_outputs.flatten())
+            if batch_outputs.ndim == 1:
+                predicted_prices.append(batch_outputs[4])  # Direct indexing for 1D
+            else:
+                predicted_prices.extend(batch_outputs[:, 4].flatten())  # Normal 2D indexing
 
 
 
-    predicted_prices, actual_prices = inverse_scaling(scaler, predicted_prices, scaled_test_data['Close'][ENCODE_LEN:])
+    predicted_prices, actual_prices = inverse_scaling(scaler, predicted_prices, scaled_test_data['Close'][SEQ_LEN-1:])
 
     ## Evaluation
     mse, mae, mape = evaluation(actual_prices, predicted_prices)
@@ -202,13 +205,13 @@ def main():
 
     # Plot the test results
     plt.figure(figsize=(14, 7))
-    plt.plot(test_data.index[ENCODE_LEN:], actual_prices, label='Actual Prices')
-    plt.plot(test_data.index[ENCODE_LEN:], predicted_prices, label='Predicted Prices')
+    plt.plot(test_data.index[SEQ_LEN-1:], actual_prices, label='Actual Prices')
+    plt.plot(test_data.index[SEQ_LEN-1:], predicted_prices, label='Predicted Prices')
     plt.title(f'{ticker} Price Prediction')
     plt.xlabel('Date')
     plt.ylabel('Stock Price')
     plt.legend()
-    plt.savefig(f"TFT_{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"TFT_D5_{ticker}_price_prediction.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
